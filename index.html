@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>7-Supermart | Rack & Cooler Inspector</title>
+    <!-- html2pdf library for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <!-- Font Awesome 6 (free icons) for real icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, 'Roboto', sans-serif;
+        }
+
+        body {
+            background: #f0f2f5;
+            padding: 1.8rem;
+            min-height: 100vh;
+        }
+
+        /* 7-Eleven inspired palette: orange (#FF6600), red (#E31837), green (#009A44), dark grey, white */
+        :root {
+            --seven-orange: #FF6600;
+            --seven-red: #E31837;
+            --seven-green: #009A44;
+            --seven-dark: #2C2E3E;
+            --seven-light: #F8F9FA;
+            --seven-border: #E9ECEF;
+            --seven-text: #1F2937;
+        }
+
+        .app-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 28px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+
+        /* header with 7-Eleven vibe */
+        .brand-header {
+            background: var(--seven-dark);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            border-bottom: 3px solid var(--seven-orange);
+        }
+        .logo-area h1 {
+            color: white;
+            font-size: 1.6rem;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+        }
+        .logo-area h1 i {
+            color: var(--seven-orange);
+            margin-right: 8px;
+        }
+        .logo-area p {
+            color: #adb5bd;
+            font-size: 0.75rem;
+        }
+        .stats-group {
+            display: flex;
+            gap: 1.5rem;
+            background: rgba(255,255,255,0.08);
+            padding: 0.5rem 1.2rem;
+            border-radius: 60px;
+        }
+        .stat-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: white;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        .stat-badge i {
+            font-size: 1rem;
+        }
+        .stat-badge .count {
+            font-weight: 800;
+            margin-left: 4px;
+            background: var(--seven-orange);
+            padding: 0px 8px;
+            border-radius: 30px;
+        }
+        .green-stat .count { background: var(--seven-green); }
+        .red-stat .count { background: var(--seven-red); }
+
+        /* multi-select & worker bar */
+        .worker-toolbar {
+            background: var(--seven-light);
+            padding: 1rem 2rem;
+            border-bottom: 1px solid var(--seven-border);
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+        .worker-input-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            background: white;
+            padding: 0.4rem 1rem;
+            border-radius: 60px;
+            border: 1px solid #dee2e6;
+        }
+        .worker-input-area label {
+            font-weight: 600;
+            color: var(--seven-dark);
+            font-size: 0.85rem;
+        }
+        #workerNameInput {
+            border: none;
+            padding: 8px 0;
+            font-size: 0.9rem;
+            width: 150px;
+            outline: none;
+            background: transparent;
+        }
+        .batch-note {
+            font-size: 0.7rem;
+            color: #6c757d;
+        }
+        .selection-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .btn-icon {
+            background: white;
+            border: 1px solid #ced4da;
+            border-radius: 40px;
+            padding: 6px 14px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.1s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--seven-dark);
+        }
+        .btn-icon i { font-size: 0.8rem; }
+        .btn-primary {
+            background: var(--seven-orange);
+            border-color: var(--seven-orange);
+            color: white;
+        }
+        .btn-primary:hover { background: #e05a00; }
+        .btn-outline-red {
+            border-color: var(--seven-red);
+            color: var(--seven-red);
+        }
+        .btn-outline-red:hover { background: #fff0f0; }
+        .btn-outline-green {
+            border-color: var(--seven-green);
+            color: var(--seven-green);
+        }
+        .btn-outline-green:hover { background: #e6f5ec; }
+
+        /* main racks + cooler grid */
+        .inventory-section {
+            padding: 1.8rem 2rem 2rem 2rem;
+        }
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 1.2rem;
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: var(--seven-dark);
+            border-left: 4px solid var(--seven-orange);
+            padding-left: 12px;
+        }
+        .racks-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .rack-card {
+            flex: 1;
+            min-width: 170px;
+            background: white;
+            border-radius: 20px;
+            border: 1px solid var(--seven-border);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+            overflow: hidden;
+            transition: all 0.1s;
+        }
+        .rack-header {
+            background: #fefaf5;
+            padding: 12px;
+            text-align: center;
+            font-weight: 800;
+            font-size: 1rem;
+            border-bottom: 1px solid #ffe4cc;
+            color: var(--seven-dark);
+        }
+        .rack-header i {
+            color: var(--seven-orange);
+            margin-right: 6px;
+        }
+        .partitions-list {
+            padding: 0.8rem;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .slot-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #ffffff;
+            padding: 8px 10px;
+            border-radius: 14px;
+            border: 1px solid #edf2f7;
+            transition: 0.05s linear;
+            cursor: pointer;
+        }
+        .slot-item.selected-for-batch {
+            background: #fff1e6;
+            border-left: 3px solid var(--seven-orange);
+            box-shadow: 0 1px 4px rgba(255,102,0,0.1);
+        }
+        .slot-label {
+            font-size: 0.8rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .status-chip {
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            border-radius: 40px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .status-checked {
+            background: #e1f7ea;
+            color: var(--seven-green);
+        }
+        .status-unchecked {
+            background: #ffe6e5;
+            color: var(--seven-red);
+        }
+        .worker-info {
+            font-size: 0.65rem;
+            color: #5f6c80;
+            max-width: 100px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .slot-actions {
+            display: flex;
+            gap: 5px;
+        }
+        .mini-btn {
+            background: none;
+            border: none;
+            font-size: 0.7rem;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 30px;
+            color: #6c757d;
+        }
+        .mini-btn:hover { background: #f1f3f5; }
+        .cooler-section {
+            margin-top: 1rem;
+            background: #fefef9;
+            border-radius: 24px;
+            border: 1px solid var(--seven-border);
+            padding: 1rem 1.2rem;
+        }
+        .cooler-title {
+            font-weight: 700;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--seven-dark);
+        }
+        .cooler-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .cooler-slot {
+            flex: 1;
+            min-width: 110px;
+            background: white;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+        .cooler-slot.selected-for-batch {
+            background: #fff1e6;
+            border-left: 3px solid var(--seven-orange);
+        }
+        .action-bar-bottom {
+            margin-top: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            padding-top: 1rem;
+            border-top: 1px solid var(--seven-border);
+        }
+        .btn-pdf {
+            background: var(--seven-orange);
+            color: white;
+            padding: 10px 24px;
+            border: none;
+        }
+        .btn-reset {
+            background: white;
+            border: 1px solid #ddd;
+        }
+        footer {
+            background: #f8f9fa;
+            text-align: center;
+            font-size: 0.7rem;
+            padding: 1rem;
+            color: #6c757d;
+            border-top: 1px solid var(--seven-border);
+        }
+        @media (max-width: 760px) {
+            body { padding: 1rem; }
+            .slot-item { flex-wrap: wrap; gap: 8px; }
+        }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <div class="brand-header">
+        <div class="logo-area">
+            <h1><i class="fas fa-store"></i> 7-Supermart</h1>
+            <p>Rack & Cooler Inspector | 5 racks · 5 slots + 1 cooler</p>
+        </div>
+        <div class="stats-group">
+            <div class="stat-badge"><i class="fas fa-tshirt"></i> Racks <span class="count" id="totalRacksCount">5</span></div>
+            <div class="stat-badge green-stat"><i class="fas fa-check-circle"></i> Verified <span class="count" id="totalCheckedCount">0</span></div>
+            <div class="stat-badge red-stat"><i class="fas fa-clock"></i> Pending <span class="count" id="totalUncheckedCount">0</span></div>
+        </div>
+    </div>
+
+    <!-- Worker batch toolbar -->
+    <div class="worker-toolbar">
+        <div class="worker-input-area">
+            <i class="fas fa-user-circle" style="color: var(--seven-orange);"></i>
+            <label>Worker name:</label>
+            <input type="text" id="workerNameInput" placeholder="e.g., John, Maria" value="Staff">
+            <div class="batch-note"><i class="fas fa-check-double"></i> Select items, then apply</div>
+        </div>
+        <div class="selection-controls">
+            <button id="batchCheckBtn" class="btn-icon btn-primary"><i class="fas fa-clipboard-list"></i> Mark selected ✓</button>
+            <button id="batchUncheckBtn" class="btn-icon btn-outline-red"><i class="fas fa-undo-alt"></i> Uncheck selected</button>
+            <button id="clearSelectionBtn" class="btn-icon"><i class="fas fa-times-circle"></i> Clear</button>
+        </div>
+    </div>
+
+    <div class="inventory-section">
+        <div class="section-title">
+            <i class="fas fa-shelves" style="color: var(--seven-orange);"></i> 
+            <span>Shelving Racks (5 racks x 5 slots)</span>
+        </div>
+        <div id="racksContainer" class="racks-grid"></div>
+
+        <div class="cooler-section">
+            <div class="cooler-title">
+                <i class="fas fa-temperature-low" style="color: #009A44;"></i> 
+                <span>Cooler Unit · 5 compartments</span>
+            </div>
+            <div id="coolerContainer" class="cooler-grid"></div>
+        </div>
+
+        <div class="action-bar-bottom">
+            <div class="summary-text" id="liveSummary"><i class="fas fa-chart-simple"></i> 0 / 30 items verified</div>
+            <div style="display: flex; gap: 12px;">
+                <button id="resetAllBtn" class="btn-icon btn-outline-red"><i class="fas fa-trash-alt"></i> Reset everything</button>
+                <button id="generatePdfBtn" class="btn-icon btn-pdf"><i class="fas fa-file-pdf"></i> Generate PDF report</button>
+            </div>
+        </div>
+    </div>
+    <footer>
+        <i class="fas fa-people-arrows"></i> Workers can multi-select slots → apply name & status • Orange = action, Green = checked, Red = unchecked
+    </footer>
+</div>
+
+<script>
+    // CONFIGURATION
+    const RACKS = 5;
+    const PARTITIONS_PER_RACK = 5;
+    const COOLER_SLOTS = 5;   // 1 cooler with 5 compartments
+
+    // Data models: rackData[rack][part] = { checked, checkedBy, timestamp }
+    let rackData = [];
+    let coolerData = []; // array length 5
+
+    // Selection set: store keys "rack_{r}_{p}" and "cooler_{index}"
+    let selectedItems = new Set();
+
+    // Helper: load/save localstorage
+    function loadData() {
+        const saved = localStorage.getItem('seven_supermart_data');
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                if (parsed.rackData && parsed.coolerData) {
+                    rackData = parsed.rackData;
+                    coolerData = parsed.coolerData;
+                    return;
+                }
+            } catch(e) {}
+        }
+        // fresh init
+        rackData = [];
+        for (let r = 0; r < RACKS; r++) {
+            let rack = [];
+            for (let p = 0; p < PARTITIONS_PER_RACK; p++) {
+                rack.push({ checked: false, checkedBy: null, timestamp: null });
+            }
+            rackData.push(rack);
+        }
+        coolerData = [];
+        for (let c = 0; c < COOLER_SLOTS; c++) {
+            coolerData.push({ checked: false, checkedBy: null, timestamp: null });
+        }
+    }
+    function persistData() {
+        localStorage.setItem('seven_supermart_data', JSON.stringify({ rackData, coolerData }));
+    }
+
+    // update global counters & summary
+    function updateGlobalStats() {
+        let totalChecked = 0;
+        let totalItems = RACKS * PARTITIONS_PER_RACK + COOLER_SLOTS;
+        for (let r = 0; r < RACKS; r++) {
+            for (let p = 0; p < PARTITIONS_PER_RACK; p++) if (rackData[r][p].checked) totalChecked++;
+        }
+        for (let c = 0; c < COOLER_SLOTS; c++) if (coolerData[c].checked) totalChecked++;
+        const totalUnchecked = totalItems - totalChecked;
+        document.getElementById('totalCheckedCount').innerText = totalChecked;
+        document.getElementById('totalUncheckedCount').innerText = totalUnchecked;
+        document.getElementById('liveSummary').innerHTML = `<i class="fas fa-chart-simple"></i> ${totalChecked} / ${totalItems} verified (${totalUnchecked} pending)`;
+        return { totalChecked, totalItems };
+    }
+
+    // render racks & cooler with selection highlight
+    function renderAll() {
+        const racksContainer = document.getElementById('racksContainer');
+        racksContainer.innerHTML = '';
+        for (let r = 0; r < RACKS; r++) {
+            const rackCard = document.createElement('div');
+            rackCard.className = 'rack-card';
+            rackCard.innerHTML = `<div class="rack-header"><i class="fas fa-archive"></i> RACK ${r+1}</div><div class="partitions-list" id="rack-${r}-list"></div>`;
+            const partList = rackCard.querySelector('.partitions-list');
+            for (let p = 0; p < PARTITIONS_PER_RACK; p++) {
+                const slot = rackData[r][p];
+                const isSelected = selectedItems.has(`rack_${r}_${p}`);
+                const slotDiv = document.createElement('div');
+                slotDiv.className = `slot-item ${isSelected ? 'selected-for-batch' : ''}`;
+                slotDiv.setAttribute('data-type', 'rack');
+                slotDiv.setAttribute('data-rack', r);
+                slotDiv.setAttribute('data-part', p);
+                // Label & status
+                const leftDiv = document.createElement('div');
+                leftDiv.className = 'slot-label';
+                leftDiv.innerHTML = `<i class="fas fa-box-open"></i> Slot ${p+1} `;
+                const statusSpan = document.createElement('span');
+                statusSpan.className = `status-chip ${slot.checked ? 'status-checked' : 'status-unchecked'}`;
+                statusSpan.innerHTML = slot.checked ? '<i class="fas fa-check-circle"></i> Checked' : '<i class="fas fa-circle"></i> Unchecked';
+                leftDiv.appendChild(statusSpan);
+                const rightDiv = document.createElement('div');
+                rightDiv.style.display = 'flex';
+                rightDiv.style.alignItems = 'center';
+                rightDiv.style.gap = '10px';
+                const workerSpan = document.createElement('span');
+                workerSpan.className = 'worker-info';
+                if (slot.checked && slot.checkedBy) workerSpan.innerHTML = `<i class="fas fa-user"></i> ${slot.checkedBy}`;
+                else if (slot.checked) workerSpan.innerHTML = `<i class="fas fa-user"></i> worker`;
+                else workerSpan.innerHTML = '';
+                const selectIcon = document.createElement('i');
+                selectIcon.className = 'fas fa-check-square';
+                selectIcon.style.color = isSelected ? '#FF6600' : '#ccc';
+                selectIcon.style.cursor = 'pointer';
+                selectIcon.style.fontSize = '0.9rem';
+                rightDiv.appendChild(workerSpan);
+                rightDiv.appendChild(selectIcon);
+                slotDiv.appendChild(leftDiv);
+                slotDiv.appendChild(rightDiv);
+                // click toggle selection
+                slotDiv.addEventListener('click', (e) => {
+                    if (e.target.tagName === 'I' && e.target.classList.contains('fa-check-square')) e.stopPropagation();
+                    toggleSelection(`rack_${r}_${p}`, slotDiv);
+                });
+                selectIcon.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    toggleSelection(`rack_${r}_${p}`, slotDiv);
+                });
+                partList.appendChild(slotDiv);
+            }
+            racksContainer.appendChild(rackCard);
+        }
+
+        // render cooler
+        const coolerContainer = document.getElementById('coolerContainer');
+        coolerContainer.innerHTML = '';
+        for (let c = 0; c < COOLER_SLOTS; c++) {
+            const slot = coolerData[c];
+            const isSelected = selectedItems.has(`cooler_${c}`);
+            const coolerDiv = document.createElement('div');
+            coolerDiv.className = `cooler-slot ${isSelected ? 'selected-for-batch' : ''}`;
+            coolerDiv.setAttribute('data-type', 'cooler');
+            coolerDiv.setAttribute('data-idx', c);
+            const leftSpan = document.createElement('span');
+            leftSpan.innerHTML = `<i class="fas fa-thermometer-half"></i> Comp ${c+1}`;
+            const statusSpan = document.createElement('span');
+            statusSpan.className = `status-chip ${slot.checked ? 'status-checked' : 'status-unchecked'}`;
+            statusSpan.style.fontSize = '0.65rem';
+            statusSpan.innerHTML = slot.checked ? '✓' : '✗';
+            const workerSpan = document.createElement('span');
+            workerSpan.className = 'worker-info';
+            workerSpan.style.fontSize = '0.65rem';
+            if (slot.checked && slot.checkedBy) workerSpan.innerHTML = `<i class="fas fa-user"></i> ${slot.checkedBy}`;
+            else workerSpan.innerHTML = '';
+            const iconSel = document.createElement('i');
+            iconSel.className = 'fas fa-check-square';
+            iconSel.style.color = isSelected ? '#FF6600' : '#adb5bd';
+            iconSel.style.marginLeft = '6px';
+            iconSel.style.cursor = 'pointer';
+            const rightGroup = document.createElement('div');
+            rightGroup.style.display = 'flex';
+            rightGroup.style.gap = '6px';
+            rightGroup.appendChild(workerSpan);
+            rightGroup.appendChild(iconSel);
+            coolerDiv.appendChild(leftSpan);
+            coolerDiv.appendChild(statusSpan);
+            coolerDiv.appendChild(rightGroup);
+            coolerDiv.addEventListener('click', (e) => {
+                if (e.target === iconSel || iconSel.contains(e.target)) e.stopPropagation();
+                toggleSelection(`cooler_${c}`, coolerDiv);
+            });
+            iconSel.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleSelection(`cooler_${c}`, coolerDiv);
+            });
+            coolerContainer.appendChild(coolerDiv);
+        }
+        updateGlobalStats();
+    }
+
+    function toggleSelection(key, element) {
+        if (selectedItems.has(key)) {
+            selectedItems.delete(key);
+            element.classList.remove('selected-for-batch');
+        } else {
+            selectedItems.add(key);
+            element.classList.add('selected-for-batch');
+        }
+        // update icon inside element
+        const icon = element.querySelector('.fa-check-square');
+        if (icon) icon.style.color = selectedItems.has(key) ? '#FF6600' : '#ccc';
+    }
+
+    // batch apply: mark checked with current worker name
+    function batchApplyChecked() {
+        const workerNameRaw = document.getElementById('workerNameInput').value.trim();
+        const worker = workerNameRaw === "" ? "TeamMember" : workerNameRaw;
+        if (selectedItems.size === 0) {
+            alert("No slots selected. Click on any slot or checkbox to select.");
+            return;
+        }
+        for (const key of selectedItems) {
+            if (key.startsWith('rack_')) {
+                const parts = key.split('_');
+                const r = parseInt(parts[1]);
+                const p = parseInt(parts[2]);
+                if (!isNaN(r) && !isNaN(p)) {
+                    rackData[r][p] = {
+                        checked: true,
+                        checkedBy: worker,
+                        timestamp: new Date().toLocaleString()
+                    };
+                }
+            } else if (key.startsWith('cooler_')) {
+                const idx = parseInt(key.split('_')[1]);
+                if (!isNaN(idx)) {
+                    coolerData[idx] = {
+                        checked: true,
+                        checkedBy: worker,
+                        timestamp: new Date().toLocaleString()
+                    };
+                }
+            }
+        }
+        persistData();
+        renderAll();
+        // optional: keep selection or clear? We'll keep selection but might confuse, but better clear after batch
+        selectedItems.clear();
+        renderAll(); // refresh highlight removal
+    }
+
+    function batchApplyUnchecked() {
+        if (selectedItems.size === 0) { alert("No slots selected."); return; }
+        for (const key of selectedItems) {
+            if (key.startsWith('rack_')) {
+                const parts = key.split('_');
+                const r = parseInt(parts[1]);
+                const p = parseInt(parts[2]);
+                if (!isNaN(r) && !isNaN(p)) {
+                    rackData[r][p] = { checked: false, checkedBy: null, timestamp: null };
+                }
+            } else if (key.startsWith('cooler_')) {
+                const idx = parseInt(key.split('_')[1]);
+                if (!isNaN(idx)) coolerData[idx] = { checked: false, checkedBy: null, timestamp: null };
+            }
+        }
+        persistData();
+        selectedItems.clear();
+        renderAll();
+    }
+
+    function clearSelection() {
+        selectedItems.clear();
+        renderAll();
+    }
+
+    function resetAll() {
+        if (confirm("⚠️ Reset all racks & cooler compartments? This will clear all checked status.")) {
+            for (let r = 0; r < RACKS; r++) {
+                for (let p = 0; p < PARTITIONS_PER_RACK; p++) {
+                    rackData[r][p] = { checked: false, checkedBy: null, timestamp: null };
+                }
+            }
+            for (let c = 0; c < COOLER_SLOTS; c++) {
+                coolerData[c] = { checked: false, checkedBy: null, timestamp: null };
+            }
+            persistData();
+            selectedItems.clear();
+            renderAll();
+        }
+    }
+
+    // PDF report generator with detailed info (racks, cooler, who checked)
+    function generatePDF() {
+        let totalItems = RACKS * PARTITIONS_PER_RACK + COOLER_SLOTS;
+        let totalChecked = 0;
+        for (let r=0; r<RACKS; r++) for(let p=0;p<PARTITIONS_PER_RACK;p++) if(rackData[r][p].checked) totalChecked++;
+        for(let c=0;c<COOLER_SLOTS;c++) if(coolerData[c].checked) totalChecked++;
+        const now = new Date().toLocaleString();
+        const pdfDoc = document.createElement('div');
+        pdfDoc.style.padding = '24px';
+        pdfDoc.style.fontFamily = 'Inter, system-ui';
+        pdfDoc.style.background = '#fff';
+        pdfDoc.innerHTML = `
+            <div style="border-bottom: 3px solid #FF6600; margin-bottom: 20px;">
+                <h1 style="color:#2C2E3E;"><i class="fas fa-store"></i> 7-Supermart Inspection Report</h1>
+                <p>Generated: ${now} | Total Racks: 5 | Cooler: 1 unit (5 compartments)</p>
+            </div>
+            <div style="display:flex; gap:20px; background:#F8F9FA; padding:12px; border-radius:16px; margin-bottom:24px;">
+                <div><strong>✅ Checked:</strong> ${totalChecked}</div>
+                <div><strong>❌ Unchecked:</strong> ${totalItems - totalChecked}</div>
+                <div><strong>📦 Total Items:</strong> ${totalItems}</div>
+            </div>
+            <h3><i class="fas fa-archive"></i> Racks Details</h3>
+            <table style="width:100%; border-collapse:collapse; margin-bottom:24px;">
+                <thead style="background:#FF660010;"><tr><th>Rack</th><th>Slot</th><th>Status</th><th>Checked By</th><th>Timestamp</th></tr></thead>
+                <tbody>
+                    ${(() => { let rows = '';
+                        for(let r=0;r<RACKS;r++) for(let p=0;p<PARTITIONS_PER_RACK;p++) {
+                            const s = rackData[r][p];
+                            rows += `<tr><td>Rack ${r+1}</td><td>Slot ${p+1}</td><td style="color:${s.checked?'#009A44':'#E31837'}">${s.checked?'✓ Checked':'✗ Unchecked'}</td><td>${s.checkedBy || '—'}</td><td>${s.timestamp || '—'}</td></tr>`;
+                        } return rows; })()}
+                </tbody>
+            </table>
+            <h3><i class="fas fa-temperature-low"></i> Cooler Compartments</h3>
+            <table style="width:100%; border-collapse:collapse;">
+                <thead style="background:#E6F5EC;"><tr><th>Compartment</th><th>Status</th><th>Checked By</th><th>Timestamp</th></tr></thead>
+                <tbody>
+                    ${coolerData.map((c, idx) => `<tr><td>Cooler #${idx+1}</td><td style="color:${c.checked?'#009A44':'#E31837'}">${c.checked?'✓ Checked':'✗ Unchecked'}</td><td>${c.checkedBy || '—'}</td><td>${c.timestamp || '—'}</td></tr>`).join('')}
+                </tbody>
+            </table>
+            <footer style="margin-top:30px; font-size:10px; color:gray; text-align:center;">7-Supermart Inspector • Multi-rack & Cooler report</footer>
+        `;
+        const opt = { margin: 0.5, filename: `7supermart_report_${Date.now()}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' } };
+        html2pdf().set(opt).from(pdfDoc).save();
+    }
+
+    // event binding
+    document.getElementById('batchCheckBtn').addEventListener('click', batchApplyChecked);
+    document.getElementById('batchUncheckBtn').addEventListener('click', batchApplyUnchecked);
+    document.getElementById('clearSelectionBtn').addEventListener('click', clearSelection);
+    document.getElementById('resetAllBtn').addEventListener('click', resetAll);
+    document.getElementById('generatePdfBtn').addEventListener('click', generatePDF);
+
+    loadData();
+    renderAll();
+    window.addEventListener('storage', (e) => { if(e.key === 'seven_supermart_data') { loadData(); renderAll(); } });
+</script>
+</body>
+</html>
